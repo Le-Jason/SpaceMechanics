@@ -1,21 +1,23 @@
 from orbitInitPropagate import orbitInitPropagate
+from Extra import multiPlot
 import numpy as np
 
+def main():
+    a = (409+418)/2 + 6371+1000
+    e = 0.1
+    i = 80
+    RAAN = 45
+    w = 45
+    vu = 0
 
-r = 1000 + 6371
-v = np.sqrt((0.0000000000000000000667430*5972000000000000000000000)/r)
+    stateVec = [a,e,i,RAAN,w,vu]
+    ISSOrbit = orbitInitPropagate('Earth',kepler=True,stateVec=stateVec)
+    t0 = 0
+    y0 = [0,0,0,0,0,0]
+    dt = 100
+    tf = 100*500
+    tSol,ySol = ISSOrbit.propagateOrbit(t0,y0,dt,tf)
+    ISSOrbit.plot()
 
-r0 = [r,0,0]
-v0 = [0,v,0]
-y0 = r0 + v0
-t0 = 0
-N = 100*100
-dt = 100
-
-
-earthOrbit = orbitInitPropagate('Earth')
-[tSol,ySol] = earthOrbit.propagateOrbit(t0,y0,dt,N)
-earthOrbit.plot()
-
-
-
+if __name__ == '__main__':
+    main()
