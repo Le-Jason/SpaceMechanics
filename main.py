@@ -15,7 +15,7 @@ def main():
     dt = 100
 
 
-    earthOrbit = orbitInitPropagate('Earth')
+    earthOrbit = orbitInitPropagate('Earth',kepler=False)
     [tSol,ySol] = earthOrbit.propagateOrbit(t0,y0,dt,N)
     # earthOrbit.plot()
     r = 1000 + 6371
@@ -24,7 +24,7 @@ def main():
     v0 = [0,v,0]
     print(v)
     y0 = r0 + v0
-    earthOrbit2 = orbitInitPropagate('Earth')
+    earthOrbit2 = orbitInitPropagate('Earth',kepler=False)
     [tSol2,ySol2] = earthOrbit2.propagateOrbit(t0,y0,dt,N)
     ys = [ySol , ySol2]
     label = ['1','2']

@@ -6,7 +6,7 @@ import os
 import csv
 
 class orbitInitPropagate():
-    def __init__(self,planet,kepler='False',stateVec=[]):
+    def __init__(self,planet,kepler=False,stateVec=[],TLE=False,sat=""):
         self.name = planet
         self.readData()
         self.G = 0.0000000000000000000667430 #(N*km^2)/kg^2
@@ -14,6 +14,8 @@ class orbitInitPropagate():
         self.deg2rad = np.pi/180
         self.rad2deg = 180/np.pi
         self.kepler = kepler
+        self.TLE = TLE
+        self.rad2revperday = m.pi/(12*3600)
 
         if kepler:
             self.stateVec = stateVec
@@ -23,6 +25,11 @@ class orbitInitPropagate():
             self.RAAN = stateVec[3]*self.deg2rad #Right ascension of the ascending node [rad]
             self.w = stateVec[4]*self.deg2rad  #argument of perigee [rad]
             self.vu = stateVec[5]*self.deg2rad #true anomaly [rad]
+            self.COE2RV()
+
+        if TLE:
+            self.satellite = sat
+            self.TLEdecode()
             self.COE2RV()
 
     def readData(self):
@@ -51,7 +58,7 @@ class orbitInitPropagate():
 
     def propagateOrbit(self,t0,y0,dt,tf):
         N = int(np.ceil(tf/dt))
-        if self.kepler:
+        if self.kepler or self.TLE:
             y0[0:3] = self.rIJK
             y0[3:7] = self.vIJK
         ySol = np.zeros((N,len(y0)))
@@ -131,3 +138,77 @@ class orbitInitPropagate():
         self.rIJK = self.rIJK.ravel()
         self.vIJK = np.matmul(T_PQW_IJK,vPQW)
         self.vIJK = self.vIJK.ravel()
+
+    def TLEdecode(self):
+        fileName = os.path.join("Data","TLEdata.csv")
+        file = open(fileName,newline='')
+        reader = csv.reader(file)
+        counter = 1
+        for row in reader:
+            n = len(row[0])
+            if (n == 69) and (counter2 == 1):
+                self.TLEDataParase(counter,row)
+                counter *= -1
+            else:
+                counter2 = self.TLEheader(row)
+        file.close()
+    
+    def TLEheader(self,dataString):
+        data = ""
+        for i in range(len(dataString[0])):
+            data = data + dataString[0][i]
+            if self.satellite == data:
+                return 1
+        return 0
+
+    def TLEDataParase(self,counter,dataString):
+        if counter == 1:
+            # lineNumber = dataString[0][0]
+            # satelliteCatalogNumber = dataString[0][2:7]
+            # classification = dataString[0][7]
+            # internationalDesignatorYear = dataString[0][9:11]
+            # internationalDesignatorLaunchYear = dataString[0][11:14]
+            # internationalDesignatorLaunchPiece = dataString[0][14:17]
+            # epochYear = dataString[0][18:20]
+            # epochDay = dataString[0][20:32]
+            # firstDerivativeMeanMotion = dataString[0][33:43]
+            # firstDerivativeMeanMotion = dataString[0][44:52]
+            # ephemerisType = dataString[0][62:63]
+            # elementSet = dataString[0][64:68]
+            # checksum = dataString[0][68]
+            pass
+        if counter == -1:
+            # lineNumber = dataString[0][0]
+            # satelliteCatalogNumber = dataString[0][2:7]
+            inclination = dataString[0][8:16]
+            RAAN = dataString[0][17:25]
+            eccentricity = "0."+dataString[0][26:33]
+            argumentofPerigee = dataString[0][34:42]
+            meanAnomaly = dataString[0][43:51]
+            meanMotion = dataString[0][52:63]
+            # revolutionNumberEpoch = dataString[0][53:68]
+            # checksum = dataString[0][68]
+
+            self.i = float(inclination)*self.deg2rad
+            self.e = float(eccentricity)
+            self.RAAN = float(RAAN)*self.deg2rad
+            self.w = float(argumentofPerigee)*self.deg2rad
+            self.a = m.pow(self.mu/(float(meanMotion)*self.rad2revperday)**2,1/3)
+            self.vu = self.TLEMeanAnomly(float(meanAnomaly)*self.deg2rad)
+
+    def TLEMeanAnomly(self,M):
+        counter = 0
+        tol = 0.00000001
+        if M < m.pi:
+            E = M + (self.e/2)
+        else:
+            E = M - (self.e/2)
+        while(counter == 0): 
+            f = E - self.e*m.sin(E) - M
+            fprime = 1 - self.e*m.cos(E)
+            ratio = f/fprime
+            if abs(ratio) <= tol:
+                counter = 1
+            else:
+                E = E - ratio
+        return 2*(m.atan(m.tan(E/2)/(m.sqrt((1-self.e)/(1+self.e)))))
