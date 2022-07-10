@@ -5,8 +5,17 @@ import math as m
 import os 
 import csv
 
+
+def perturbations():
+    return {
+        'J2':False,
+        'Drag':False,
+        'Lunar':False,
+        'Solar':False
+    }
+
 class orbitInitPropagate():
-    def __init__(self,planet,kepler=False,stateVec=[],TLE=False,sat=""):
+    def __init__(self,planet,kepler=False,stateVec=[],TLE=False,sat="",perturbation=perturbations()):
         self.name = planet
         self.readData()
         self.G = 0.0000000000000000000667430 #(N*km^2)/kg^2
@@ -16,8 +25,11 @@ class orbitInitPropagate():
         self.kepler = kepler
         self.TLE = TLE
         self.rad2revperday = m.pi/(12*3600)
+        self.perturbation = perturbation
 
         if kepler:
+            #EX:kelper=True,stateVec=[65,0.5,65,45,25,45]
+            #[a,e,i,RAAN,w,vu]
             self.stateVec = stateVec
             self.a = stateVec[0]  #semi-major axis [km]
             self.e = stateVec[1]  #eccentricity [--]
@@ -28,6 +40,7 @@ class orbitInitPropagate():
             self.COE2RV()
 
         if TLE:
+            #EX:TLE=True,sat="GPS BIIR-4  (PRN 20)"
             self.satellite = sat
             self.TLEdecode()
             self.COE2RV()
@@ -47,6 +60,7 @@ class orbitInitPropagate():
                 self.rotation = float(row[3])
                 self.distance = float(row[4])
                 self.eccentricity  = float(row[5])
+                self.J2 = float(row[6])
         file.close()
 
     def dydt(self,t,y):
@@ -54,15 +68,33 @@ class orbitInitPropagate():
         rVec = np.array([rx,ry,rz])
         rNorm = np.sqrt(((rx**2)+(ry**2)+(rz**2)))
         [ax,ay,az] = (-rVec*self.mu)/(rNorm**3)
+
+        if self.perturbation['J2']:
+            z2 = rz**2
+            r2 = rNorm**2
+            Ux = rx/rNorm*(5*z2/r2-1)
+            Uy = ry/rNorm*(5*z2/r2-1)
+            Uz = rz/rNorm*(5*z2/r2-3)
+            aJ2 = 1.5*self.J2 * self.mu * self.radius**2/rNorm**4*[Ux,Uy,Uz]
+            [ax,ay,az] = [ax,ay,az] + aJ2
+
+
         return [vx,vy,vz,ax,ay,az]
 
     def propagateOrbit(self,t0,y0,dt,tf):
+
+        # EX:
+        # t0 = 0
+        # y0 = [0,0,0,0,0,0]
+        # dt = 100
+        # tf = 100*500
+
         N = int(np.ceil(tf/dt))
         if self.kepler or self.TLE:
             y0[0:3] = self.rIJK
             y0[3:7] = self.vIJK
         ySol = np.zeros((N,len(y0)))
-        tSol = np.zeros((N,t0))
+        tSol = np.zeros((N,1))
         for i in range(len(y0)):
             ySol[0,i] = y0[i]
         tSol[0] = t0
@@ -212,3 +244,119 @@ class orbitInitPropagate():
             else:
                 E = E - ratio
         return 2*(m.atan(m.tan(E/2)/(m.sqrt((1-self.e)/(1+self.e)))))
+
+    def giveOrbitElements(self):
+
+        rSol = self.ySol[:,0:3]
+        vSol = self.ySol[:,3:7]
+
+        n = len(rSol[:,0])
+        aElements = []
+        eElements = []
+        iElements = []
+        RAANElements = []
+        wElements = []
+        vuElements = []
+
+        for i in range(n):
+            r = np.array([rSol[i,0],rSol[i,1],rSol[i,2]])
+            v = np.array([vSol[i,0],vSol[i,1],vSol[i,2]])
+            K = np.array([0,0,1])
+            rNorm = m.sqrt(np.dot(r,r))
+            vNorm = m.sqrt(np.dot(v,v))
+            vRad = np.dot(r,v)/rNorm
+            h = np.cross(r,v)
+            hNorm = m.sqrt(np.dot(h,h))
+            i = m.acos(h[2]/hNorm)
+            N = np.cross(K,h)
+            NNorm = m.sqrt(np.dot(N,N))
+            if N[1] >= 0:
+                RAAN = m.acos(N[0]/NNorm)
+            elif N[1] < 0:
+                RAAN = (2*np.pi) - m.acos(N[0]/NNorm)
+            e = (1/self.mu)*(np.cross(v,h) - (self.mu*(r/rNorm)))
+            eNorm = m.sqrt(np.dot(e,e))
+            if e[2] >= 0:
+                w = m.acos(np.dot(N,e)/(NNorm*eNorm))
+            elif e[2] < 0:
+                w = (2*np.pi) - m.acos(np.dot(N,e)/(NNorm*eNorm))
+            
+            vuPart = np.dot(e/eNorm,r/rNorm)
+            tol = 0.00000000002
+            if (vuPart > 1) and (vuPart <= 1+tol):
+                vuPart = 1
+            if vRad >= 0:
+                vu = m.acos(vuPart)
+            elif vRad < 0:
+                vu = (2*np.pi) - m.acos(vuPart)
+            
+
+            rp = ((hNorm**2)/self.mu*(1/(1+eNorm*m.cos(0))))
+            ra = ((hNorm**2)/self.mu*(1/(1+eNorm*m.cos(m.pi))))
+            a = 0.5*(rp + ra)
+
+            aElements.append(a)
+            eElements.append(eNorm)
+            iElements.append(i*self.rad2deg)
+            RAANElements.append(RAAN*self.rad2deg)
+            wElements.append(w*self.rad2deg)
+            vuElements.append(vu*self.rad2deg)
+        return aElements,eElements,iElements,RAANElements,wElements,vuElements
+
+    def plotKepler(self,title='Orbtial Elements vs Time',time='None',figsize=(18,10)):
+
+        aElements,eElements,iElements,RAANElements,wElements,vuElements = self.giveOrbitElements()
+        
+        plt.style.use('dark_background')
+        fig,axs = plt.subplots(nrows=2,ncols=3,figsize=figsize)
+        fig.suptitle(title,fontsize=20)
+
+        if time == 'Hours':
+            tSol = self.tSol/3600.0
+            xlabel = 'Time Elapsed [Hours]'
+        elif time == 'Days':
+            tSol = self.tSol/3600.0/24.0
+            xlabel = 'Time Elapsed [Days]'
+        else:
+            tSol = self.tSol
+            xlabel = 'Time Elapsed [Seconds]'
+
+        axs[0,0].plot(tSol,aElements)
+        axs[0,0].set_title('Semi-Major Axis vs Time')
+        axs[0,0].grid(True)
+        axs[0,0].set_ylabel('Semi-Major Axis [km]')
+        axs[0,0].set_xlabel(xlabel)
+
+        axs[1,0].plot(tSol,eElements)
+        axs[1,0].set_title('Eccentricity vs Time')
+        axs[1,0].grid(True)
+        axs[1,0].set_ylabel('Eccentricity')
+        axs[1,0].set_xlabel(xlabel)
+
+        axs[0,1].plot(tSol,iElements)
+        axs[0,1].set_title('Inclination vs Time')
+        axs[0,1].grid(True)
+        axs[0,1].set_ylabel('Inclination [degrees]')
+        axs[0,1].set_xlabel(xlabel)
+        axs[0,1].set_ylim([0,180])
+
+        axs[0,2].plot(tSol,RAANElements)
+        axs[0,2].set_title('RAAN vs Time')
+        axs[0,2].grid(True)
+        axs[0,2].set_ylabel('RAAN [degrees]')
+        axs[0,2].set_xlabel(xlabel)
+        # axs[0,2].set_ylim([0,360])
+
+        axs[1,1].plot(tSol,wElements)
+        axs[1,1].set_title('Argument of Periapse vs Time')
+        axs[1,1].grid(True)
+        axs[1,1].set_ylabel('Argument of Periapse [degrees]')
+        axs[1,1].set_xlabel(xlabel)
+
+        axs[1,2].plot(tSol,vuElements)
+        axs[1,2].set_title('True Anomaly vs Time')
+        axs[1,2].grid(True)
+        axs[1,2].set_ylabel('Angle [degrees]')
+        axs[1,2].set_xlabel(xlabel)
+
+        plt.show()

@@ -1,37 +1,24 @@
 from orbitInitPropagate import orbitInitPropagate
+from orbitInitPropagate import perturbations
 from Extra import multiPlot
+from Extra import giveOrbitalElements
+from Extra import readData
 import numpy as np
 
 def main():
-
-    r = 10000 + 6371
-    v = np.sqrt((0.0000000000000000000667430*5972000000000000000000000)/r)
-
-    r0 = [r,0,0]
-    v0 = [0,v,0]
-    y0 = r0 + v0
+    [Name,mass,radius,rotation,distance,eccentricity,J2] = readData('Earth')
+    G = 0.0000000000000000000667430
+    mu = G*mass
+    state = [414+6371,0.0006189,51.6393,105.6372,234.1955,0]
+    perts=perturbations()
+    perts['J2'] + True
+    Orbit1 = orbitInitPropagate('Earth',kepler=True,stateVec=state,perturbation=perts)
     t0 = 0
-    N = 100*500
+    y0 = [0,0,0,0,0,0]
     dt = 100
-
-
-    earthOrbit = orbitInitPropagate('Earth',kepler=False)
-    [tSol,ySol] = earthOrbit.propagateOrbit(t0,y0,dt,N)
-    # earthOrbit.plot()
-    r = 1000 + 6371
-    v = np.sqrt((0.0000000000000000000667430*5972000000000000000000000)/r)+2
-    r0 = [r,0,0]
-    v0 = [0,v,0]
-    print(v)
-    y0 = r0 + v0
-    earthOrbit2 = orbitInitPropagate('Earth',kepler=False)
-    [tSol2,ySol2] = earthOrbit2.propagateOrbit(t0,y0,dt,N)
-    ys = [ySol , ySol2]
-    label = ['1','2']
-    title = 'Many'
-    multiPlot('Earth',ys,label,title)
-
-    
+    tf = 100*5000
+    tSol,ySol = Orbit1.propagateOrbit(t0,y0,dt,tf)
+    Orbit1.plotKepler()
 
 
 if __name__ == '__main__':
