@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 import math as m
 import os 
 import csv
-
+from mpl_toolkits.mplot3d import Axes3D
 
 def multiPlot(NameP,ySol,Labels,Title):
 #Ex:ySol = [ySol1 , ySol2]
 #Labels and Title must be strings
     N = len(ySol)
-    fileName = os.path.join("Data","SolarSystem.csv")
+    fileName = os.path.join("C:/Users/spong/Documents/Code/projects/spacemechanics/Data","SolarSystem.csv")
     file = open(fileName,newline='')
     reader = csv.reader(file)
     header = next(reader)
@@ -30,10 +30,22 @@ def multiPlot(NameP,ySol,Labels,Title):
         ax.plot(ySol[i][:,0],ySol[i][:,1],ySol[i][:,2],label=Labels[i])
         ax.plot([ySol[i][0,0]],[ySol[i][0,1]],[ySol[i][0,2]],'wo')
 
-    _u,_v = np.mgrid[0:2*np.pi:20j,0:np.pi:10j]
-    _x = radius * np.cos(_u)*np.sin(_v)
-    _y = radius * np.sin(_u)*np.sin(_v)
-    _z = radius * np.cos(_v)
+    img = plt.imread('C:/Users/spong/Documents/Code/projects/spacemechanics/Data/bluemarble.jpg')
+    theta = np.linspace(0, np.pi, img.shape[0])
+    phi = np.linspace(0, 2*np.pi, img.shape[1])
+    count = 180
+    theta_inds = np.linspace(0, img.shape[0] - 1, count).round().astype(int)
+    phi_inds = np.linspace(0, img.shape[1] - 1, count).round().astype(int)
+    theta = theta[theta_inds]
+    phi = phi[phi_inds]
+    img = img[np.ix_(theta_inds, phi_inds)]
+    theta,phi = np.meshgrid(theta, phi)
+
+    phi,theta = np.mgrid[0:2*np.pi:20j,0:np.pi:10j]
+    _x = radius * np.cos(phi)*np.sin(theta)
+    _y = radius * np.sin(phi)*np.sin(theta)
+    _z = radius * np.cos(theta)
+    # ax.plot_surface(_x.T,_y.T,_z.T, facecolors=img/255, cstride=1, rstride=1)
     ax.plot_surface(_x,_y,_z,cmap='Blues')
 
     l = radius*2
@@ -57,7 +69,7 @@ def multiPlot(NameP,ySol,Labels,Title):
 
 
 def readData(name):
-    fileName = os.path.join("Data","SolarSystem.csv")
+    fileName = os.path.join("C:/Users/spong/Documents/Code/projects/spacemechanics/Data","SolarSystem.csv")
     file = open(fileName,newline='')
     reader = csv.reader(file)
     header = next(reader)
@@ -128,4 +140,4 @@ def giveOrbitalElements(rSol,vSol,mu):
         wElements.append(w)
         vuElements.append(vu)
     
-    return aElements,eElements,iElements,RAANElements,wElements,vuElements
+        return aElements,eElements,iElements,RAANElements,wElements,vuElements

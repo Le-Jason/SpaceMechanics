@@ -46,7 +46,7 @@ class orbitInitPropagate():
             self.COE2RV()
 
     def readData(self):
-        fileName = os.path.join("Data","SolarSystem.csv")
+        fileName = os.path.join("C:/Users/spong/Documents/Code/projects/spacemechanics/data","SolarSystem.csv")
         file = open(fileName,newline='')
         reader = csv.reader(file)
         header = next(reader)
@@ -172,7 +172,7 @@ class orbitInitPropagate():
         self.vIJK = self.vIJK.ravel()
 
     def TLEdecode(self):
-        fileName = os.path.join("Data","TLEdata.csv")
+        fileName = os.path.join("C:/Users/spong/Documents/Code/projects/spacemechanics/Data","TLEdata.csv")
         file = open(fileName,newline='')
         reader = csv.reader(file)
         counter = 1
@@ -301,7 +301,7 @@ class orbitInitPropagate():
             RAANElements.append(RAAN*self.rad2deg)
             wElements.append(w*self.rad2deg)
             vuElements.append(vu*self.rad2deg)
-        return aElements,eElements,iElements,RAANElements,wElements,vuElements
+            return aElements,eElements,iElements,RAANElements,wElements,vuElements
 
     def plotKepler(self,title='Orbtial Elements vs Time',time='None',figsize=(18,10)):
 
