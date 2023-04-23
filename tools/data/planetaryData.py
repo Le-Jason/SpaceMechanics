@@ -13,3 +13,5 @@ earth = {   'name'  : 'Earth',
             'SOI'   : 926006.6608, # km
             'map'   : 'Blues'
         }
+
+

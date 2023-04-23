@@ -1,33 +1,62 @@
-
-
-import requests
-import json
-from mpl_toolkits.basemap import Basemap
+import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.animation import FFMpegWriter
+
+# This needs to be changed for your code
+plt.rcParams['animation.ffmpeg_path'] = 'C:\\Users\\spong\\Downloads\\ffmpeg-6.0-full_build\\ffmpeg-6.0-full_build\\bin\\ffmpeg.exe'
+
+# This is the final example I showed in the code - notice I have 2 "cursor marks" not shown in the video
+fig = plt.figure()
+l, = plt.plot([], [], 'k-')
+l2, = plt.plot([], [], 'm--')
+p1, = plt.plot([], [], 'ko')
+p2, = plt.plot([], [], 'mo')
+
+plt.xlabel('xlabel')
+plt.ylabel('ylabel')
+plt.title('title')
+
+plt.xlim(-5, 5)
+plt.ylim(-5, 5)
+
+def func(x):
+    return np.sin(x)*3
+
+def func2(x):
+    return np.cos(x)*3
+
+metadata = dict(title='Movie', artist='codinglikemad')
+writer = FFMpegWriter(fps=15, metadata=metadata)
 
 
-url = "http://api.open-notify.org/iss-now.json"
+xlist = []
+xlist2 = []
+ylist = []
+ylist2 = []
 
+with writer.saving(fig, "sinWave2.mp4", 100):
 
-response = requests.get(url)
+    # Plot the first line and cursor
+    for xval in np.linspace(-5,5,100):
+        xlist.append(xval)
+        ylist.append(func(xval))
 
+        l.set_data(xlist,ylist)
+        l2.set_data(xlist2,ylist2)
 
-data = json.loads(response.text)
+        p1.set_data(xval,func(xval))
 
+        writer.grab_frame()
 
-iss_lat = float(data["iss_position"]["latitude"])
-iss_lon = float(data["iss_position"]["longitude"])
+    # plot the second line and cursor
+    for xval in np.linspace(-5,5,100):
+        xlist2.append(xval)
+        ylist2.append(func2(xval))
 
+        l.set_data(xlist,ylist)
+        l2.set_data(xlist2,ylist2)
 
-map = Basemap(projection="cyl")
+        p2.set_data(xval,func2(xval))
 
-
-map.drawcoastlines(linewidth=0.25)
-map.fillcontinents(color="coral", lake_color="aqua")
-
-
-x, y = map(iss_lon, iss_lat)
-map.plot(x, y, "bo", markersize=6)
-
-
-plt.show()
+        writer.grab_frame()
