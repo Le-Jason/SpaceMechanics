@@ -1,62 +1,85 @@
+import sys
+sys.path.append('C:\\Users\\spong\\Documents\\Code\\projects\\manimrepo\\manim')
+from manimlib import *
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.animation import FFMpegWriter
+sys.path.append('C:/Users/spong/Documents/Code/projects/spacemechanics/tools/data')
+sys.path.append('C:/Users/spong/Documents/Code/projects/spacemechanics/tools')
+from planetaryData import earth
+from spaceCraftState import spaceCraftState
+from spaceCraftState import perturbations
+import math as m
 
-# This needs to be changed for your code
-plt.rcParams['animation.ffmpeg_path'] = 'C:\\Users\\spong\\Downloads\\ffmpeg-6.0-full_build\\ffmpeg-6.0-full_build\\bin\\ffmpeg.exe'
-
-# This is the final example I showed in the code - notice I have 2 "cursor marks" not shown in the video
-fig = plt.figure()
-l, = plt.plot([], [], 'k-')
-l2, = plt.plot([], [], 'm--')
-p1, = plt.plot([], [], 'ko')
-p2, = plt.plot([], [], 'mo')
-
-plt.xlabel('xlabel')
-plt.ylabel('ylabel')
-plt.title('title')
-
-plt.xlim(-5, 5)
-plt.ylim(-5, 5)
-
-def func(x):
-    return np.sin(x)*3
-
-def func2(x):
-    return np.cos(x)*3
-
-metadata = dict(title='Movie', artist='codinglikemad')
-writer = FFMpegWriter(fps=15, metadata=metadata)
+class Orbits(Scene):
+    def construct(self):
 
 
-xlist = []
-xlist2 = []
-ylist = []
-ylist2 = []
+        r_apo = 7
+        r_peri = 3
+        a = (r_apo + r_peri) / 2
+        e = (r_apo - r_peri)/(r_apo + r_peri)
 
-with writer.saving(fig, "sinWave2.mp4", 100):
+        state = [a*2000,e,0,0,0,0]
+        perts=perturbations()
+        perts['J2'] + True
+        Orbit1 = spaceCraftState('Earth',kepler=True,stateVec=state,perturbation=perts)
+        t0 = 0
+        y0 = [0,0,0,0,0,0]
+        dt = 100
+        tf = 100*5000
+        tSol,ySol = Orbit1.propagateOrbit(t0,y0,dt,tf)
 
-    # Plot the first line and cursor
-    for xval in np.linspace(-5,5,100):
-        xlist.append(xval)
-        ylist.append(func(xval))
+        
 
-        l.set_data(xlist,ylist)
-        l2.set_data(xlist2,ylist2)
+        intro_words = Text("""
+            Fundamentals of Orbital Mechanics: 
 
-        p1.set_data(xval,func(xval))
+                          Orbits
+        """).scale(1)
+        intro_words.to_edge(UP)
+        orbit = Ellipse(width=10.0, height=4.0).shift(DOWN*1)
 
-        writer.grab_frame()
 
-    # plot the second line and cursor
-    for xval in np.linspace(-5,5,100):
-        xlist2.append(xval)
-        ylist2.append(func2(xval))
 
-        l.set_data(xlist,ylist)
-        l2.set_data(xlist2,ylist2)
+        circle = Circle()
+        orbit.set_color(YELLOW)
+        img = ImageMobject("Earth_Western_Hemisphere_transparent_background.png")
+        img.set_height(circle.get_height())
+        img.set_width(circle.get_width())
+        img.shift(DOWN*1).shift(RIGHT*2)
+        # print(orbit.get_anchors())
+        maxValX = max(-1*ySol[:,0]) 
+        maxValY = max(ySol[:,1]) 
 
-        p2.set_data(xval,func2(xval))
+        img2 = ImageMobject("Transiting_Exoplanet_Survey_Satellite_artist_concept_(transparent_background).png")
+        img2 = Circle().scale(0.1)
+        img3 = Circle().scale(0.1)
+        img3.shift(LEFT*0).shift(UP*1.0)
+        # self.add(img3)
+        img2.p = ySol[0,0:3]
+        self.t=0
+        self.step=0.001
+        self.counter=0
+        def update(mob):
+            mob.move_to([img.get_center()[0] + ySol[self.counter,0]*7/maxValX,img.get_center()[1] + ySol[self.counter,1]*2/maxValY,img.get_center()[2] + ySol[self.counter,2]])
+            img2.p = [img.get_center()[0] + ySol[self.counter,0]*7/maxValX,img.get_center()[1] + ySol[self.counter,1]*2/maxValY,img.get_center()[2] + ySol[self.counter,2]]
+            self.counter+=1
+        self.add(orbit,img,img2)
+        img2.add_updater(update)
+        
+        path=Line(img2.get_center(),img.get_center()).set_stroke(width=0.05)
+        def path_update(mob):
+            line=Line(img2.get_center(),img.get_center()).set_stroke(width=0.05)
+            # path.append_vectorized_mobject(line)
+            mob.become(line)
 
-        writer.grab_frame()
+        def update_label(mob):
+            pos = path.point_from_proportion(0.25)
+            mob.move_to(pos + [0,0.5,0])
+
+        path.add_updater(path_update)
+        self.add(path)
+        text2 = Text("r").scale(1)
+        text2.add_updater(update_label)
+        self.add(text2)
+        self.play(Write(intro_words))
+        self.wait(60)
