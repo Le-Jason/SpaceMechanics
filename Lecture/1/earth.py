@@ -27,7 +27,7 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d',facecolor='black')
 plt.style.use('dark_background')
 
-state = [414+6371+1000+10000,0.5006189,51.6393,105.6372,234.1955,0]
+state = [414+6371+1000+10000,0.5006189,0,105.6372,234.1955,0]
 perts=perturbations()
 perts['J2'] + True
 Orbit1 = spaceCraftState('Earth',kepler=True,stateVec=state,perturbation=perts)
@@ -45,7 +45,7 @@ N = 1
 
 maxVal =np.max(np.abs(ySol))
 
-print(maxVal)
+print(ySol)
 
 
 x = np.outer(np.cos(lons), np.cos(lats)).T

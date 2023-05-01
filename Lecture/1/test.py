@@ -75,11 +75,70 @@ class Orbits(Scene):
         def update_label(mob):
             pos = path.point_from_proportion(0.25)
             mob.move_to(pos + [0,0.5,0])
+        
 
         path.add_updater(path_update)
         self.add(path)
         text2 = Text("r").scale(1)
         text2.add_updater(update_label)
+        
+        refAngle = path.point_from_proportion(0.25)/np.linalg.norm(path.point_from_proportion(0.25))
+        scaleRelLine = 1.5
+        refLine = path.point_from_proportion(1.0)- (scaleRelLine*path.get_unit_vector())
+        refLineUnit = path.get_unit_vector()
+        cheese = path.get_length()
+        refLength = np.linalg.norm(path.point_from_proportion(0.6))
+        self.oldAngle = 0
+        self.CNT = 0
+        def update_arc(mob):
+            
+            referenceLine = img2.get_center() - img.get_center()
+            length = np.linalg.norm(referenceLine)
+            coords = cheese/path.get_length()
+            line2 = path.point_from_proportion(1.0) - (scaleRelLine*path.get_unit_vector())
+            
+            dot_pro = np.dot(refLineUnit, path.get_unit_vector())
+            angle = m.degrees(m.acos(dot_pro))
+            
+            if angle < self.oldAngle:
+                self.CNT = 1
+            self.oldAngle = angle
+
+            if self.CNT == 1:
+                angle = (180 - angle + 180)
+                self.CNT = 0
+            if angle >= 320:
+                angle = 320
+            arc2 = ArcBetweenPoints(refLine,line2,angle*3.1415/180, stroke_color=WHITE,radius=1)
+            mob.become(arc2)
+        arc = ArcBetweenPoints(path.get_unit_vector(),path.get_unit_vector(), stroke_color=WHITE,radius=1)
+        arc.add_updater(update_arc)
+        def update_label2(mob):
+            pos = path.point_from_proportion(1.0) - (0.75*scaleRelLine*path.get_unit_vector())
+            mob.move_to(pos)
+
+
+        def update_path2(mob):
+            theta = -np.pi/2
+            R = [m.cos(theta), -m.sin(theta), 0,
+                 m.sin(theta), m.cos(theta), 0,
+                 0, 0, 1]
+            R = np.array(R)
+            R = R.reshape((3,3))
+            
+            rotLine = np.matmul(R,path.get_unit_vector())
+            print(R)
+            line3=Line(path.get_start(),path.get_unit_vector()).set_stroke(width=0.50)
+            mob.become(line3)
+        text3 = Text("v").scale(1)
+        text3.add_updater(update_label2)
+        path2 = Line(img2.get_center(),img2.get_center()).set_stroke(width=0.50)
+        path2.add_updater(update_path2)
+    
+        self.add(path2)
+        self.add(text3)
+        
+        self.add(arc)
         self.add(text2)
         self.play(Write(intro_words))
         self.wait(60)

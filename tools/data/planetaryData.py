@@ -14,4 +14,12 @@ earth = {   'name'  : 'Earth',
             'map'   : 'Blues'
         }
 
+custom = {   'name'  : 'Custom',
+            'mass'  : 1,
+            'mu'    : 1 * G,
+            'radius': 0,
+            'J2'    : 0,
+            'SOI'   : 926006.6608, # km
+            'map'   : 'Blues'
+        }
 
