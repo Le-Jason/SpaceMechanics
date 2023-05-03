@@ -50,7 +50,7 @@ class Orbits(Scene):
         maxValX = max(-1*ySol[:,0]) 
         maxValY = max(ySol[:,1]) 
 
-        img2 = ImageMobject("Transiting_Exoplanet_Survey_Satellite_artist_concept_(transparent_background).png")
+        img2 = ImageMobject("surveysatellite.png")
         img2 = Circle().scale(0.1)
         img3 = Circle().scale(0.1)
         img3.shift(LEFT*0).shift(UP*1.0)
