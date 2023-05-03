@@ -28,13 +28,13 @@ class Vectors(Scene):
         def updater(mob,dt):
             deg2rad = np.pi/180
             rad2deg = 180/np.pi
-            phiGoal = 90
-            thetaGoal = 0
+            phiGoal = 30
+            thetaGoal = 180
             psiGoal = 30
             self.dt += dt
-            if self.dt >= 0.2:
+            if self.dt >= 0.1:
                 self.counter += 1
-                if self.counter >= 180:
+                if self.counter >= 360:
                     self.counter = 0
                     self.phi = 0
                     self.psi = 0
@@ -44,6 +44,8 @@ class Vectors(Scene):
                     self.phi += (1*deg2rad)
                 if ((self.counter*deg2rad) >= (phiGoal*deg2rad)) and((self.counter*deg2rad) <= (psiGoal*deg2rad + phiGoal*deg2rad)):
                     self.psi += (1*deg2rad)
+                if ((self.counter*deg2rad) >= (thetaGoal*deg2rad)) and ((self.counter*deg2rad) > (psiGoal*deg2rad + phiGoal*deg2rad)) and((self.counter*deg2rad) <= (psiGoal*deg2rad + phiGoal*deg2rad + thetaGoal*deg2rad)):
+                    self.theta += (1*deg2rad)
                 # if (self.counter*deg2rad) <= (psiGoal*deg2rad):
                 #     self.psi += (1*deg2rad)
                 # if ((self.counter*deg2rad) >= (psiGoal*deg2rad)) and((self.counter*deg2rad) <= (phiGoal*deg2rad + psiGoal*deg2rad)):
