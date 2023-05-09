@@ -129,6 +129,9 @@ class Orbits(Scene):
             rotLine = np.matmul(R,path.get_unit_vector())
             line3=Line(-rotLine+path.get_start(),rotLine+path.get_start()).set_stroke(width=0.50)
             mob.become(line3)
+        def update_path3(mob):
+            
+
         text3 = Text("v").scale(1)
         text3.add_updater(update_label2)
         path2 = Line(img2.get_center(),img2.get_center()).set_stroke(width=0.50)
