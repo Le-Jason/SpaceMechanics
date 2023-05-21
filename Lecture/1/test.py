@@ -18,7 +18,7 @@ class Orbits(Scene):
         a = (r_apo + r_peri) / 2
         e = (r_apo - r_peri)/(r_apo + r_peri)
 
-        state = [a*2000,e,0,0,0,0]
+        state = [a*20000,e,0,0,0,0]
         perts=perturbations()
         perts['J2'] + True
         Orbit1 = spaceCraftState('Earth',kepler=True,stateVec=state,perturbation=perts)
@@ -27,8 +27,31 @@ class Orbits(Scene):
         dt = 100
         tf = 100*5000
         tSol,ySol = Orbit1.propagateOrbit(t0,y0,dt,tf)
+        perigee = ySol[0,0]
+        perigeeCoords = ySol[0,0:3]
+        apogee = ySol[0,0]
+        apogeeCoords = ySol[0,0:3]
+        yAxisHigh = ySol[0,1]
+        yAxisHighCoords = ySol[0,0:3]
+        yAxisLow = ySol[0,1]
+        yAxisLowCoords = ySol[0,0:3]
+        for i in range(len(ySol)):
+            x = ySol[i,0]
+            y = ySol[i,1]
+            z = ySol[i,2]
+            if perigee > x:
+                perigee = x
+                perigeeCoords = ySol[i,0:3]
+            if apogee < x:
+                apogee = x
+                apogeeCoords = ySol[i,0:3]
+            if yAxisLow < y:
+                yAxisLow = y
+                yAxisLowCoords = ySol[i,0:3]
+            if yAxisHigh > y:
+                yAxisHigh = y
+                yAxisHighCoords = ySol[i,0:3]
 
-        
 
         intro_words = Text("""
             Fundamentals of Orbital Mechanics: 
@@ -36,8 +59,10 @@ class Orbits(Scene):
                           Orbits
         """).scale(1)
         intro_words.to_edge(UP)
+        maxValX = max(-1*ySol[:,0]) 
+        maxValY = max(ySol[:,1]) 
         orbit = Ellipse(width=10.0, height=4.0).shift(DOWN*1)
-
+        
 
 
         circle = Circle()
@@ -46,10 +71,12 @@ class Orbits(Scene):
         img.set_height(circle.get_height())
         img.set_width(circle.get_width())
         img.shift(DOWN*1).shift(RIGHT*2)
-        # print(orbit.get_anchors())
-        maxValX = max(-1*ySol[:,0]) 
-        maxValY = max(ySol[:,1]) 
 
+        yAxixLine = [yAxisLowCoords[0]*7/maxValX,yAxisLowCoords[1]*15/5/maxValX,yAxisLowCoords[2]*7/maxValX]
+        yAxixLine2 = [yAxisHighCoords[0]*7/maxValX,yAxisHighCoords[1]*15/5/maxValX,yAxisHighCoords[2]*7/maxValX]
+        # print(orbit.get_anchors())
+        orbitH=Line(img.get_center()[:] + apogeeCoords*7/maxValX,img.get_center()[:] + perigeeCoords*7/maxValX).set_stroke(width=0.05)
+        orbitV=Line(img.get_center()[:] + yAxixLine,img.get_center()[:] +yAxixLine2).set_stroke(width=0.05)
         img2 = ImageMobject("surveysatellite.png")
         img2 = Circle().scale(0.1)
         img3 = Circle().scale(0.1)
@@ -129,18 +156,73 @@ class Orbits(Scene):
             rotLine = np.matmul(R,path.get_unit_vector())
             line3=Line(-rotLine+path.get_start(),rotLine+path.get_start()).set_stroke(width=0.50)
             mob.become(line3)
-        def update_path3(mob):
-            
-
-        text3 = Text("v").scale(1)
-        text3.add_updater(update_label2)
         path2 = Line(img2.get_center(),img2.get_center()).set_stroke(width=0.50)
         path2.add_updater(update_path2)
+
+        
+        def update_arc4(mob):
+            linePath1 = [img.get_center()[0] + ySol[self.counter-1,0]*7/maxValX,img.get_center()[1] + ySol[self.counter-1,1]*2/maxValY,img.get_center()[2] + ySol[self.counter-1,2]]
+            linePath2 = [img.get_center()[0] + ySol[self.counter+1,0]*7/maxValX,img.get_center()[1] + ySol[self.counter+1,1]*2/maxValY,img.get_center()[2] + ySol[self.counter+1,2]]
+            intermedLine=Line(linePath2,linePath1).set_stroke(width=0.50)
+            refLineRef = intermedLine.point_from_proportion(1.0)- (0.5*intermedLine.get_unit_vector())
+            line2Ref = path2.point_from_proportion(1.0) - (0.5*path2.get_unit_vector())
+            dot_pro = np.dot(intermedLine.get_unit_vector(), path2.get_unit_vector())
+            angle = m.degrees(m.acos(dot_pro))
+            
+            cross_angle = np.cross(intermedLine.get_unit_vector(),path2.get_unit_vector())
+            if cross_angle[2] > 0:
+                arc3 = ArcBetweenPoints(line2Ref,refLineRef,angle*3.1415/180/2, stroke_color=WHITE,radius=1)
+            else:
+                arc3 = ArcBetweenPoints(refLineRef,line2Ref,angle*3.1415/180/2, stroke_color=WHITE,radius=1)
+                
+            mob.become(arc3)
+        def update_line4(mob):
+            linePath1 = [img.get_center()[0] + ySol[self.counter-1,0]*7/maxValX,img.get_center()[1] + ySol[self.counter-1,1]*2/maxValY,img.get_center()[2] + ySol[self.counter-1,2]]
+            linePath2 = [img.get_center()[0] + ySol[self.counter+1,0]*7/maxValX,img.get_center()[1] + ySol[self.counter+1,1]*2/maxValY,img.get_center()[2] + ySol[self.counter+1,2]]
+            intermedLine=Line(linePath1,linePath2).set_stroke(width=0.50)
+            refLineRef = intermedLine.point_from_proportion(1.0)- (0.5*intermedLine.get_unit_vector())
+            line2Ref = path2.point_from_proportion(1.0) - (0.5*path2.get_unit_vector())
+            dot_pro = np.dot(intermedLine.get_unit_vector(), path2.get_unit_vector())
+            angle = m.degrees(m.acos(dot_pro))
+            cross_angle = np.cross(intermedLine.get_unit_vector(),path2.get_unit_vector())
+            theta1 = -np.pi/2
+            R1 = [m.cos(theta1), -m.sin(theta1), 0,
+                 m.sin(theta1), m.cos(theta1), 0,
+                 0, 0, 1]
+            R1 = np.array(R1)
+            R1 = R1.reshape((3,3))
+            if cross_angle[2] > 0:
+                theta2 = -m.acos(dot_pro)
+            else:
+                theta2 = m.acos(dot_pro)
+            
+            R2 = [m.cos(theta2), -m.sin(theta2), 0,
+                 m.sin(theta2), m.cos(theta2), 0,
+                 0, 0, 1]
+            R2 = np.array(R2)
+            R2 = R2.reshape((3,3))
+            
+            rotLine = np.matmul(R1,path.get_unit_vector())
+
+            rotLine = np.matmul(R2,rotLine)
+            line4=Line(-0+path.get_start(),2*rotLine+path.get_start()).set_stroke(width=4)
+            mob.become(line4)
+        path4 = Line([img.get_center()[0] + ySol[self.counter-1,0]*7/maxValX,img.get_center()[1] + ySol[self.counter-1,1]*2/maxValY,img.get_center()[2] + ySol[self.counter-1,2]],[img.get_center()[0] + ySol[self.counter+1,0]*7/maxValX,img.get_center()[1] + ySol[self.counter+1,1]*2/maxValY,img.get_center()[2] + ySol[self.counter+1,2]]).set_stroke(width=0.50)
+        path4.add_updater(update_line4)
+        
+        arc4 = ArcBetweenPoints(path.get_unit_vector(),path.get_unit_vector(), stroke_color=WHITE,radius=1)
+        arc4.add_updater(update_arc4)
+        text3 = Text("v").scale(1)
+        text3.add_updater(update_label2)
+        path4.add_updater(update_line4)
     
         self.add(path2)
-        self.add(text3)
-        
+        # self.add(text3)
+        self.add(path4)
         self.add(arc)
-        self.add(text2)
+        self.add(arc4)
+        # self.add(text2)
+        self.add(orbitH)
+        self.add(orbitV)
         self.play(Write(intro_words))
         self.wait(60)
