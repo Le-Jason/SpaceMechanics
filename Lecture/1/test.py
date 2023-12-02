@@ -12,13 +12,15 @@ import math as m
 class Orbits(Scene):
     def construct(self):
 
+        # Setting up the Orbit
+        r_apo = 7 # Change the Width of the orbit
+        r_peri = 3 # Change the Height of the orbit
+        orbitSpeed = 20000 # Change the Speed of the orbit
 
-        r_apo = 7
-        r_peri = 3
+        # Create the Orbit
         a = (r_apo + r_peri) / 2
         e = (r_apo - r_peri)/(r_apo + r_peri)
-
-        state = [a*20000,e,0,0,0,0]
+        state = [a*orbitSpeed,e,0,0,0,0] 
         perts=perturbations()
         perts['J2'] + True
         Orbit1 = spaceCraftState('Earth',kepler=True,stateVec=state,perturbation=perts)
@@ -27,56 +29,63 @@ class Orbits(Scene):
         dt = 100
         tf = 100*5000
         tSol,ySol = Orbit1.propagateOrbit(t0,y0,dt,tf)
-        perigee = ySol[0,0]
-        perigeeCoords = ySol[0,0:3]
-        apogee = ySol[0,0]
-        apogeeCoords = ySol[0,0:3]
-        yAxisHigh = ySol[0,1]
-        yAxisHighCoords = ySol[0,0:3]
-        yAxisLow = ySol[0,1]
-        yAxisLowCoords = ySol[0,0:3]
+        
+
+        # Setup Orbit's horizonal and vertical lines
+        periCounter = ySol[0,0]
+        periPos = ySol[0,0:3]
+        apogeeCounter = ySol[0,0]
+        apogeePos = ySol[0,0:3]
+        yAxisHighCounter = ySol[0,1]
+        yAxisHighPos = ySol[0,0:3]
+        yAxisLowCounter = ySol[0,1]
+        yAxisLowPos = ySol[0,0:3]
         for i in range(len(ySol)):
             x = ySol[i,0]
             y = ySol[i,1]
             z = ySol[i,2]
-            if perigee > x:
-                perigee = x
-                perigeeCoords = ySol[i,0:3]
-            if apogee < x:
-                apogee = x
-                apogeeCoords = ySol[i,0:3]
-            if yAxisLow < y:
-                yAxisLow = y
-                yAxisLowCoords = ySol[i,0:3]
-            if yAxisHigh > y:
-                yAxisHigh = y
-                yAxisHighCoords = ySol[i,0:3]
+            if periCounter > x:
+                periCounter = x
+                periPos = ySol[i,0:3]
+            if apogeeCounter < x:
+                apogeeCounter = x
+                apogeePos = ySol[i,0:3]
+            if yAxisLowCounter < y:
+                yAxisLowCounter = y
+                yAxisLowPos = ySol[i,0:3]
+            if yAxisHighCounter > y:
+                yAxisHighCounter = y
+                yAxisHighPos = ySol[i,0:3]
+        maxValX = max(-1*ySol[:,0]) 
+        maxValY = max(ySol[:,1]) 
 
-
+        # Scene SetUp
         intro_words = Text("""
             Fundamentals of Orbital Mechanics: 
 
                           Orbits
         """).scale(1)
         intro_words.to_edge(UP)
-        maxValX = max(-1*ySol[:,0]) 
-        maxValY = max(ySol[:,1]) 
+
+        # Planet
         orbit = Ellipse(width=10.0, height=4.0).shift(DOWN*1)
-        
-
-
         circle = Circle()
         orbit.set_color(YELLOW)
         img = ImageMobject("Earth_Western_Hemisphere_transparent_background.png")
         img.set_height(circle.get_height())
         img.set_width(circle.get_width())
         img.shift(DOWN*1).shift(RIGHT*2)
-
-        yAxixLine = [yAxisLowCoords[0]*7/maxValX,yAxisLowCoords[1]*15/5/maxValX,yAxisLowCoords[2]*7/maxValX]
-        yAxixLine2 = [yAxisHighCoords[0]*7/maxValX,yAxisHighCoords[1]*15/5/maxValX,yAxisHighCoords[2]*7/maxValX]
-        # print(orbit.get_anchors())
-        orbitH=Line(img.get_center()[:] + apogeeCoords*7/maxValX,img.get_center()[:] + perigeeCoords*7/maxValX).set_stroke(width=0.05)
+        
+        # Orbit
+        
+        yAxixLine = [yAxisLowPos[0]*7/maxValX,yAxisLowPos[1]*15/5/maxValX,yAxisLowPos[2]*7/maxValX]
+        yAxixLine2 = [yAxisHighPos[0]*7/maxValX,yAxisHighPos[1]*15/5/maxValX,yAxisHighPos[2]*7/maxValX]
+        orbitH=Line(img.get_center()[:] + apogeePos*7/maxValX,img.get_center()[:] + periPos*7/maxValX).set_stroke(width=0.05)
         orbitV=Line(img.get_center()[:] + yAxixLine,img.get_center()[:] +yAxixLine2).set_stroke(width=0.05)
+        
+        
+        
+
         img2 = ImageMobject("surveysatellite.png")
         img2 = Circle().scale(0.1)
         img3 = Circle().scale(0.1)
