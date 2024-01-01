@@ -98,16 +98,16 @@ def Anomaly2v(e,E,p=0,r=0):
 
 def RV2COE(r,v):
     mu = 398600.4418
-    h = np.cross(r,v)
+    h = np.cross(r.flatten(),v.flatten())
     hNorm = m.sqrt(np.dot(h,h))
     K = np.array([0,0,1])
     n = np.cross(K,h)
     nNorm = m.sqrt(np.dot(n,n))
-    vNorm = m.sqrt(np.dot(v,v))
-    rNorm = m.sqrt(np.dot(r,r))
-    e = ((((vNorm**2) - (mu/rNorm))*r) - (np.dot(r,v)*v)) / mu
+    vNorm = m.sqrt(np.dot(v.flatten(),v.flatten()))
+    rNorm = m.sqrt(np.dot(r.flatten(),r.flatten()))
+    e = ((((vNorm**2) - (mu/rNorm))*r) - (np.dot(r.flatten(),v.flatten())*v)) / mu
     l = ((vNorm**2)/2) - (mu/rNorm)
-    eNorm = m.sqrt(np.dot(e,e))
+    eNorm = m.sqrt(np.dot(e.flatten(),e.flatten()))
     if (eNorm != 1.0):
         a = -mu/(2*l)
         p = a*(1 - (eNorm**2))
@@ -120,21 +120,21 @@ def RV2COE(r,v):
     elif (n[1] < 0):
         RAAN = (2*m.pi) - m.acos(n[0]/nNorm)
     if (e[2] >= 0):
-        w = m.acos(np.dot(n,e)/(nNorm*eNorm))
+        w = m.acos(np.dot(n.flatten(),e.flatten())/(nNorm*eNorm))
     elif (e[2] < 0):
-        w = (2*np.pi) - m.acos(np.dot(n,e)/(nNorm*eNorm))
-    if (np.dot(r,v) >= 0):
-        truev = m.acos(np.dot(e,r)/(eNorm*rNorm))
-    elif (np.dot(r,v) < 0):
-        truev = (2*np.pi) - m.acos(np.dot(e,r)/(eNorm*rNorm))
+        w = (2*np.pi) - m.acos(np.dot(n.flatten(),e.flatten())/(nNorm*eNorm))
+    if (np.dot(r.flatten(),v.flatten()) >= 0):
+        truev = m.acos(np.dot(e.flatten(),r.flatten())/(eNorm*rNorm))
+    elif (np.dot(r.flatten(),v.flatten()) < 0):
+        truev = (2*np.pi) - m.acos(np.dot(e.flatten(),r.flatten())/(eNorm*rNorm))
     if (e[1] >= 0):
         wtrue = m.acos(e[0]/eNorm)
     elif (e[1] < 0):
         wtrue = (2*np.pi) - m.acos(e[0]/eNorm)
     if (r[2] >= 0):
-        u = m.acos(np.dot(n,r)/(nNorm*rNorm))
+        u = m.acos(np.dot(n,r.flatten())/(nNorm*rNorm))
     elif (r[2] < 0):
-        u = (2*np.pi) - m.acos(np.dot(n,r)/(nNorm*rNorm))
+        u = (2*np.pi) - m.acos(np.dot(n,r.flatten())/(nNorm*rNorm))
     if (r[1] >= 0):
         lambdatrue = m.acos(r[0]/rNorm)
     elif (r[1] < 0):
